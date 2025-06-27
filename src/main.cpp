@@ -1,8 +1,16 @@
 #include <Arduino.h>
 #include <GxEPD2_BW.h>
 #include <Fonts/FreeMonoBold9pt7b.h>
+#include <esp_sleep.h>
+#include "RTClib.h"
+#include <IRremoteESP8266.h>
+#include <IRrecv.h>
+#include <EEPROM.h>
+#include <motor_functions.h>
 
-// Display connections - adjust according to your wiring
+
+
+//e-Paper Display Connections
 #define EPD_CS      5     // GPIO5
 #define EPD_DC      17    // GPIO17
 #define EPD_RST     16    // GPIO16
@@ -17,10 +25,39 @@ GxEPD2_BW<GxEPD2_154_D67, GxEPD2_154_D67::HEIGHT> display(
 
 uint16_t counter = 0;
 
+
+// Setup IR Receiver 
+int RECV_PIN = 6; // Define input pin on arduino 
+unsigned long IRCode = 0; // Initialise IRCode (to be received from IR Remote)
+#define ONE 0xBA45FF00   // HEX code for the 1 button
+#define TWO 0xB946FF00 // HEX code for the 2 button
+#define THREE 0xB847FF00 // HEX code for the 3 button
+#define FOUR 0xBB44FF00 
+#define FIVE 0xBF40FF00
+#define SIX 0xBC43FF00
+#define SEVEN 0xF807FF00
+#define EIGHT 0xEA15FF00
+#define NINE 0xF609FF00
+#define STAR 0xE916FF00
+#define ZERO 0xE619FF00
+#define HASH 0xF20DFF00 // HEX code for the # button 
+#define OK 0xE31CFF00  // HEX code for the OK button
 void updateDisplay(); 
 
+// Set Pump Pins 
+#define pump_pin 12
+#define dir_pin 13
+#define en_pin 14
+
+
+// Set constants
+int led = 13;
+int flag = 1;
+int analog_write_freq = 146485;
+int duty_cycle = 10;
 
 void setup() {
+  EEPROM.begin(512);
   Serial.begin(115200);
   display.init();
   display.setRotation(1);  // Landscape orientation
@@ -52,17 +89,17 @@ void updateDisplay() {
     
     // Display header
     display.setCursor(10, 20);
-    display.println("FireBeetle ESP32");
+    display.println("Ebony Is So Cute");
     
     // Display sensor info (example)
     display.setCursor(10, 50);
-    display.print("Temp: ");
-    display.print(random(20, 30));  // Simulated data
+    display.print("Ebony's But / 10: ");
+    display.print("10");  // Simulated data
     display.println(" C");
     
     display.setCursor(10, 80);
-    display.print("Humidity: ");
-    display.print(random(40, 60));  // Simulated data
+    display.print("Ebonys Face / 10");
+    display.print("10");  // Simulated data
     display.println(" %");
     
     // Display counter
@@ -74,4 +111,12 @@ void updateDisplay() {
     display.setCursor(10, 180);
     display.println("Waveshare 1.54\" e-Paper");
   } while (display.nextPage());
+
+  intialise_pump(1, duty_cycle);
 }
+
+
+
+
+
+
