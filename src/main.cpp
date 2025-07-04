@@ -106,18 +106,25 @@ void loop() {
     updateDisplay("0 hrs", "Yes", "24 hours");
     delay(2000);
     intermittent_sampling(3, 27, duty_cycle);
-  } else if (IRCode == ONE) { // Start 12 hour delay
+  } else if (IRCode == ONE) { // Start 12 hour delay, then cont. sampling
     updateDisplay("12 Hrs", "No", "N.A");
     esp_sleep_enable_timer_wakeup(12*60*60 * 1000000ULL);
+    initial_delay_done = true;
     esp_deep_sleep_start();
     intermittent_sampling(3, 27, duty_cycle);
 
-  } else if (IRCode == TWO) { // Start immediately Continuous sampling
+  } else if (IRCode == TWO) { // Start 24 hour delay, then cont. sampling 
     updateDisplay("24 Hrs", "No", "N.A");
+    esp_sleep_enable_timer_wakeup(24*60*60 * 1000000ULL);
+    initial_delay_done = true;
+    esp_deep_sleep_start();
     intermittent_sampling(3, 27, duty_cycle);
 
-  } else if (IRCode == THREE) { // Delay for 48 hours 
+  } else if (IRCode == THREE) { // Start 48hr delay, then cont. sampling 
     updateDisplay("48 hrs", "No", "N.A");
+    esp_sleep_enable_timer_wakeup(48*60*60 * 1000000ULL);
+    initial_delay_done = true;
+    esp_deep_sleep_start();
     intermittent_sampling(3, 27, duty_cycle);
   }
 }
