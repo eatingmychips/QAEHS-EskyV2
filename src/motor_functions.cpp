@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include "esp_sleep.h"
 
 
 // Set Pump Pins 
@@ -11,7 +12,7 @@
 
 void stepper_act(int clockwise, int duty);
 void intialise_pump(int clockwise, int duty);
-void intermittent_sampling(int start_delay, int on_time, int off_time, int duty);
+void intermittent_sampling(int on_time, int off_time, int duty);
 
 
 void stepper_act(int clockwise, int duty) { //todo: direction
@@ -65,10 +66,10 @@ void intialise_pump(int clockwise, int duty) { //todo: direction
 
 // Implementation of intermittent sampling
 // start_delay: Hours   on_time: seconds    off_time: seconds   duty: 1-100
-void intermittent_sampling(int start_delay, int on_time, int off_time, int duty){
+void intermittent_sampling(int on_time, int off_time, int duty){
   int counter = 0;
   int flag = 1;
-  delay(start_delay*1000*60*60);
+  esp_sleep_enable_timer_wakeup(off_time * 1000000ULL); // off_time in seconds
   while (true){
     if (counter == 24*60*60/(on_time + off_time) + 1) { //24 Hour runtime
       // Stop the loop after 2880 iterations
@@ -79,14 +80,14 @@ void intermittent_sampling(int start_delay, int on_time, int off_time, int duty)
     else if (flag == 1) {
       stepper_act(1, duty); // Turn pump on
       delay(on_time*1000); // 3s
-      flag = 2; // Send system to 2nd flag (wait for 29.3 seconds)
+      flag = 2; //
     }
     
   
     else if(flag == 2){
       stepper_act(1, 0); // Turn pump off
       counter++; // Iterate the counter
-      delay(off_time*1000); // Delay for 27 seconds
+      esp_light_sleep_start(); // Light Sleep & Resume after this line
       flag = 1; // Send system back to pump on (flag = 1)
     }
   }
