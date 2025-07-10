@@ -1,5 +1,9 @@
 #include <Arduino.h>
 #include "esp_sleep.h"
+#include <GxEPD2_BW.h>
+#include <Fonts/FreeMonoBold9pt7b.h>
+#include <string>
+#include "motor_functions.h"
 
 
 // Set Pump Pins 
@@ -8,12 +12,10 @@
 #define en_pin 14
 #define led 10
 
-
-
 void stepper_act(int clockwise, int duty);
 void intialise_pump(int clockwise, int duty);
 void intermittent_sampling(int on_time, int off_time, int duty);
-
+void updateDisplay(String delay, String sampling, String time_remaining);
 
 void stepper_act(int clockwise, int duty) { //todo: direction
   //enable the stepper motor pin to hold the torque
@@ -40,7 +42,7 @@ void stepper_act(int clockwise, int duty) { //todo: direction
 
 
 void intialise_pump(int clockwise, int duty) { //todo: direction
-  esp_sleep_enable_timer_wakeup(30 * 1000000ULL);
+  esp_sleep_enable_timer_wakeup(90 * 1000000ULL);
   //enable the stepper motor pin to hold the torque
   //int timer = 0;
   digitalWrite(en_pin, HIGH);
@@ -70,6 +72,7 @@ void intialise_pump(int clockwise, int duty) { //todo: direction
 void intermittent_sampling(int on_time, int off_time, int duty){
   int counter = 0;
   int flag = 1;
+  int time_remaining = 24;
   esp_sleep_enable_timer_wakeup(off_time * 1000000ULL); // off_time in seconds
   while (true){
     if (counter == 24*60*60/(on_time + off_time) + 1) { //24 Hour runtime
@@ -79,17 +82,57 @@ void intermittent_sampling(int on_time, int off_time, int duty){
       }
     }  
     else if (flag == 1) {
+      Serial.println("Sampling");
       stepper_act(1, duty); // Turn pump on
       delay(on_time*1000); // 3s
+      counter++; // Iterate the counter
+      if (counter % 120 == 0 && counter != 0){
+        time_remaining = time_remaining - 1;
+        Serial.println(time_remaining);
+        String time = String(time_remaining); 
+        updateDisplay("--", "Yes", time);
+      }
       flag = 2; //
     }
-    
-  
     else if(flag == 2){
+      Serial.println("off");
       stepper_act(1, 0); // Turn pump off
-      counter++; // Iterate the counter
       esp_light_sleep_start(); // Light Sleep & Resume after this line
       flag = 1; // Send system back to pump on (flag = 1)
     }
   }
+
+}
+
+void updateDisplay(String delay, String sampling, String time_remaining) {
+  display.setFullWindow();
+  display.firstPage();
+  
+  do {
+    display.fillScreen(GxEPD_WHITE);
+    display.setTextColor(GxEPD_BLACK);
+    
+    // Set font
+    display.setFont(&FreeMonoBold9pt7b);
+    display.setTextSize(1);
+    
+    // Display header
+    display.setCursor(10, 20);
+    display.println("QAEHS Esky V2");
+    
+    // Display sensor info (example)
+    display.setCursor(10, 80);
+    display.print("Delay?: ");
+    display.print(delay);
+    
+    display.setCursor(10, 110);
+    display.print("Sampling?: ");
+    display.print(sampling);
+    
+    // Display footer
+    display.setCursor(10, 140);
+    display.print("Time Rem: ");
+    display.print(time_remaining); 
+
+  } while (display.nextPage());
 }

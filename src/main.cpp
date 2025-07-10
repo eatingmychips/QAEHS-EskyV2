@@ -44,7 +44,6 @@ unsigned long IRCode = 0;
 #define ZERO 0xFF9867
 #define HASH 0xFFB04F // HEX code for the # button 
 #define OK 0xFF38C7  // HEX code for the OK button
-void updateDisplay(String delay, String sampling, String time_remaining); 
 
 // Set Pump Pins 
 #define pump_pin 12
@@ -77,6 +76,7 @@ void setup() {
   irrecv.enableIRIn();
 
   if (initial_delay_done == true){
+    updateDisplay("--", "Yes", "24 hrs");
     intermittent_sampling(3, 27, duty_cycle);
   }
 }
@@ -93,7 +93,7 @@ void loop() {
         break;
       }
       else if (IRCode == HASH) {
-        updateDisplay("NA", "Init. Pump", "30sec");
+        updateDisplay("NA", "Init.", "1 min");
         intialise_pump(1, duty_cycle);
         updateDisplay("Wait..", "Wait..", "Wait..");
         IRCode = 0;
@@ -105,66 +105,31 @@ void loop() {
     }
   }
   if (IRCode == OK) { // Start immediately Intermittent Sampling
-    updateDisplay("0 hrs", "Yes", "24 hours");
+    updateDisplay("--", "Yes", "24 hrs");
     delay(2000);
     intermittent_sampling(3, 27, duty_cycle);
   } else if (IRCode == ONE) { // Start 12 hour delay, then cont. sampling
-    // updateDisplay("12 Hrs", "No", "N.A");
-    esp_sleep_enable_timer_wakeup(12*60*60 * 1000000ULL);
+    updateDisplay("12 Hrs", "No", "N.A");
+    esp_sleep_enable_timer_wakeup(30 * 1000000ULL);
     initial_delay_done = true;
     esp_deep_sleep_start();
     intermittent_sampling(3, 27, duty_cycle);
 
   } else if (IRCode == TWO) { // Start 24 hour delay, then cont. sampling 
-    // updateDisplay("24 Hrs", "No", "N.A");
+    updateDisplay("24 Hrs", "No", "N.A");
     esp_sleep_enable_timer_wakeup(24*60*60 * 1000000ULL);
     initial_delay_done = true;
     esp_deep_sleep_start();
     intermittent_sampling(3, 27, duty_cycle);
 
   } else if (IRCode == THREE) { // Start 48hr delay, then cont. sampling 
-    // updateDisplay("48 hrs", "No", "N.A");
+    updateDisplay("48 hrs", "No", "N.A");
     esp_sleep_enable_timer_wakeup(48*60*60 * 1000000ULL);
     initial_delay_done = true;
     esp_deep_sleep_start();
     intermittent_sampling(3, 27, duty_cycle);
   }
 }
-
-void updateDisplay(String delay, String sampling, String time_remaining) {
-  display.setFullWindow();
-  display.firstPage();
-  
-  do {
-    display.fillScreen(GxEPD_WHITE);
-    display.setTextColor(GxEPD_BLACK);
-    
-    // Set font
-    display.setFont(&FreeMonoBold9pt7b);
-    display.setTextSize(1);
-    
-    // Display header
-    display.setCursor(10, 20);
-    display.println("QAEHS Esky V2");
-    
-    // Display sensor info (example)
-    display.setCursor(10, 80);
-    display.print("Delay Mode: ");
-    display.print(delay);
-    
-    display.setCursor(10, 110);
-    display.print("Sampling?: ");
-    display.print(sampling);
-    
-    // Display footer
-    display.setCursor(10, 140);
-    display.print("Time Rem: ");
-    display.print(time_remaining); 
-
-  } while (display.nextPage());
-}
-
-
 
 
 
