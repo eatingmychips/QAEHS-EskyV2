@@ -40,6 +40,7 @@ void stepper_act(int clockwise, int duty) { //todo: direction
 
 
 void intialise_pump(int clockwise, int duty) { //todo: direction
+  esp_sleep_enable_timer_wakeup(30 * 1000000ULL);
   //enable the stepper motor pin to hold the torque
   //int timer = 0;
   digitalWrite(en_pin, HIGH);
@@ -60,7 +61,7 @@ void intialise_pump(int clockwise, int duty) { //todo: direction
       digitalWrite(led, HIGH);   // turn the LED on (HIGH is the voltage level)
       analogWrite(pump_pin, duty * 1023 / 100);    
     }
-  delay(120000);
+  esp_light_sleep_start(); // Light Sleep & Resume after this line
   stepper_act(1, 0);
 }
 

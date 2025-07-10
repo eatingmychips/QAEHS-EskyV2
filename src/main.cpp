@@ -26,24 +26,24 @@ GxEPD2_BW<GxEPD2_154_D67, GxEPD2_154_D67::HEIGHT> display(
   GxEPD2_154_D67(EPD_CS, EPD_DC, EPD_RST, EPD_BUSY));
 
 
-const uint16_t RecvPin = 6;
+#define RecvPin 15
 IRrecv irrecv(RecvPin);
 decode_results results;  
 unsigned long IRCode = 0;
 
-#define ONE 0xBA45FF00   // HEX code for the 1 button
-#define TWO 0xB946FF00 // HEX code for the 2 button
-#define THREE 0xB847FF00 // HEX code for the 3 button
-#define FOUR 0xBB44FF00 
-#define FIVE 0xBF40FF00
-#define SIX 0xBC43FF00
-#define SEVEN 0xF807FF00
-#define EIGHT 0xEA15FF00
-#define NINE 0xF609FF00
-#define STAR 0xE916FF00
-#define ZERO 0xE619FF00
-#define HASH 0xF20DFF00 // HEX code for the # button 
-#define OK 0xE31CFF00  // HEX code for the OK button
+#define ONE 0xFFA25D   // HEX code for the 1 button
+#define TWO 0xFF629D // HEX code for the 2 button
+#define THREE 0xFFE21D // HEX code for the 3 button
+#define FOUR 0xFF22DD 
+#define FIVE 0xFF02FD
+#define SIX 0xFFC23D
+#define SEVEN 0xFFE01F
+#define EIGHT 0xFFA857
+#define NINE 0xFF906F
+#define STAR 0xFF6897
+#define ZERO 0xFF9867
+#define HASH 0xFFB04F // HEX code for the # button 
+#define OK 0xFF38C7  // HEX code for the OK button
 void updateDisplay(String delay, String sampling, String time_remaining); 
 
 // Set Pump Pins 
@@ -73,7 +73,7 @@ void setup() {
   pinMode(en_pin, OUTPUT); 
 
   // Display initial content
-  updateDisplay("N.A", "No", "N.A");
+  updateDisplay("Wait..", "Wait..", "Wait..");
   irrecv.enableIRIn();
 
   if (initial_delay_done == true){
@@ -84,20 +84,22 @@ void setup() {
 // TODO: Change Intermittent Sampling to no delay, include deep sleep delay in code,
 // and add setup logic to continue intermittent sampling. 
 void loop() {
-  updateDisplay("N.A", "No", "N.A");
   while (IRCode == 0){ 
     if (irrecv.decode(&results)){
-      Serial.println(IRCode, HEX);
+      IRCode = results.value;
+      Serial.print("Received IR code: 0x");
+      Serial.println(results.value, HEX); 
       if ((IRCode == OK || IRCode == ONE || IRCode == TWO || IRCode == THREE)){ // If IR value received is valid
-        continue;
+        break;
       }
       else if (IRCode == HASH) {
+        updateDisplay("NA", "Init. Pump", "30sec");
         intialise_pump(1, duty_cycle);
+        updateDisplay("Wait..", "Wait..", "Wait..");
         IRCode = 0;
       }
       else {
         IRCode = 0;
-        Serial.println(IRCode);
       }
       irrecv.resume(); // Receive the next value
     }
@@ -107,21 +109,21 @@ void loop() {
     delay(2000);
     intermittent_sampling(3, 27, duty_cycle);
   } else if (IRCode == ONE) { // Start 12 hour delay, then cont. sampling
-    updateDisplay("12 Hrs", "No", "N.A");
+    // updateDisplay("12 Hrs", "No", "N.A");
     esp_sleep_enable_timer_wakeup(12*60*60 * 1000000ULL);
     initial_delay_done = true;
     esp_deep_sleep_start();
     intermittent_sampling(3, 27, duty_cycle);
 
   } else if (IRCode == TWO) { // Start 24 hour delay, then cont. sampling 
-    updateDisplay("24 Hrs", "No", "N.A");
+    // updateDisplay("24 Hrs", "No", "N.A");
     esp_sleep_enable_timer_wakeup(24*60*60 * 1000000ULL);
     initial_delay_done = true;
     esp_deep_sleep_start();
     intermittent_sampling(3, 27, duty_cycle);
 
   } else if (IRCode == THREE) { // Start 48hr delay, then cont. sampling 
-    updateDisplay("48 hrs", "No", "N.A");
+    // updateDisplay("48 hrs", "No", "N.A");
     esp_sleep_enable_timer_wakeup(48*60*60 * 1000000ULL);
     initial_delay_done = true;
     esp_deep_sleep_start();
