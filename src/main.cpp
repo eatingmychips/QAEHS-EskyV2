@@ -71,14 +71,18 @@ void setup() {
   pinMode(dir_pin, OUTPUT); 
   pinMode(en_pin, OUTPUT); 
 
-  // Display initial content
-  updateDisplay("Wait..", "Wait..", "Wait..");
   irrecv.enableIRIn();
 
+  // Check initial content 
   if (initial_delay_done == true){
     updateDisplay("--", "Yes", "24 hrs");
     intermittent_sampling(3, 27, duty_cycle);
   }
+
+  // Display initial content
+  updateDisplay("Wait..", "Wait..", "Wait..");
+
+  
 }
 
 // TODO: Change Intermittent Sampling to no delay, include deep sleep delay in code,
