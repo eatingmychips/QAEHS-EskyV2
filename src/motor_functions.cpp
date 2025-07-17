@@ -15,7 +15,7 @@
 void stepper_act(int clockwise, int duty);
 void intialise_pump(int clockwise, int duty);
 void intermittent_sampling(int on_time, int off_time, int duty);
-void updateDisplay(String delay, String sampling, String time_remaining);
+void updateDisplay(String delay, String sampling, String time_remaining, bool waiting);
 
 void stepper_act(int clockwise, int duty) { //todo: direction
   //enable the stepper motor pin to hold the torque
@@ -90,7 +90,7 @@ void intermittent_sampling(int on_time, int off_time, int duty){
         time_remaining = time_remaining - 1;
         Serial.println(time_remaining);
         String time = String(time_remaining); 
-        updateDisplay("--", "Yes", time);
+        updateDisplay("--", "Yes", time, false);
       }
       flag = 2; //
     }
@@ -104,7 +104,7 @@ void intermittent_sampling(int on_time, int off_time, int duty){
 
 }
 
-void updateDisplay(String delay, String sampling, String time_remaining) {
+void updateDisplay(String delay, String sampling, String time_remaining, bool waiting) {
   display.setFullWindow();
   display.firstPage();
   
@@ -121,18 +121,26 @@ void updateDisplay(String delay, String sampling, String time_remaining) {
     display.println("QAEHS Esky V2");
     
     // Display sensor info (example)
-    display.setCursor(10, 80);
+    display.setCursor(10, 60);
     display.print("Delay?: ");
     display.print(delay);
     
-    display.setCursor(10, 110);
+    display.setCursor(10, 90);
     display.print("Sampling?: ");
     display.print(sampling);
     
     // Display footer
-    display.setCursor(10, 140);
+    display.setCursor(10, 120);
     display.print("Time Rem: ");
     display.print(time_remaining); 
 
+    // Display Press OK to Start 
+    if (waiting){
+      display.setCursor(10, 150); 
+      display.print("Press OK to start");
+      display.setCursor(10, 180); 
+      display.print("Press <-- to reselect");
+    } 
+    
   } while (display.nextPage());
 }

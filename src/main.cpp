@@ -30,6 +30,7 @@ GxEPD2_BW<GxEPD2_154_D67, GxEPD2_154_D67::HEIGHT> display(
 IRrecv irrecv(RecvPin);
 decode_results results;  
 unsigned long IRCode = 0;
+unsigned long Start = 0;
 
 #define ONE 0xFFA25D   // HEX code for the 1 button
 #define TWO 0xFF629D // HEX code for the 2 button
@@ -75,31 +76,28 @@ void setup() {
 
   // Check initial content 
   if (initial_delay_done == true){
-    updateDisplay("--", "Yes", "24 hrs");
+    updateDisplay("--", "Yes", "24 hrs", false);
     intermittent_sampling(3, 27, duty_cycle);
   }
 
-  // Display initial content
-  updateDisplay("Wait..", "Wait..", "Wait..");
+  updateDisplay("Wait..", "Wait..", "Wait..", false);
 
-  
 }
 
-// TODO: Change Intermittent Sampling to no delay, include deep sleep delay in code,
-// and add setup logic to continue intermittent sampling. 
+
 void loop() {
   while (IRCode == 0){ 
     if (irrecv.decode(&results)){
       IRCode = results.value;
       Serial.print("Received IR code: 0x");
       Serial.println(results.value, HEX); 
-      if ((IRCode == OK || IRCode == ONE || IRCode == TWO || IRCode == THREE)){ // If IR value received is valid
+      if ((IRCode == ZERO || IRCode == ONE || IRCode == TWO || IRCode == THREE)){ // If IR value received is valid
         break;
       }
       else if (IRCode == HASH) {
-        updateDisplay("NA", "Init.", "1 min");
+        updateDisplay("NA", "Init.", "1 min", false);
         intialise_pump(1, duty_cycle);
-        updateDisplay("Wait..", "Wait..", "Wait..");
+        updateDisplay("Wait..", "Wait..", "Wait..", false);
         IRCode = 0;
       }
       else {
@@ -108,26 +106,62 @@ void loop() {
       irrecv.resume(); // Receive the next value
     }
   }
-  if (IRCode == OK) { // Start immediately Intermittent Sampling
-    updateDisplay("--", "Yes", "24 hrs");
+  Start = 0;
+  if (IRCode == ZERO) { // Start immediately Intermittent Sampling
+    updateDisplay("0 Hrs", "...", "...", true);
+    delay(2000);
+  } else if (IRCode == ONE) { // Start 12 hour delay, then cont. sampling
+    updateDisplay("12 Hrs", "...", "...", true);
+    delay(2000);
+
+  } else if (IRCode == TWO) { // Start 24 hour delay, then cont. sampling 
+    updateDisplay("24 Hrs", "...", "...", true);
+    delay(2000);
+
+  } else if (IRCode == THREE) { // Start 48hr delay, then cont. sampling 
+    updateDisplay("48 Hrs", "...", "...", true);
+    delay(2000);
+  }
+  while (Start == 0){ 
+    if (irrecv.decode(&results)){
+      Start = results.value;
+      if ((Start == OK)){ // If IR value received is valid
+        break;
+      }
+      else if (Start == STAR){
+        IRCode = 0;
+        updateDisplay("Wait..", "Wait..", "Wait..", false);
+
+        return;
+      }
+      else {
+        Start = 0;
+      }
+      irrecv.resume(); // Receive the next value
+    }
+  }
+  if (IRCode == ZERO) { // Start immediately Intermittent Sampling
+    Start = 0; 
+    updateDisplay("0 Hrs", "Yes", "24 hrs", false);
     delay(2000);
     intermittent_sampling(3, 27, duty_cycle);
+
   } else if (IRCode == ONE) { // Start 12 hour delay, then cont. sampling
-    updateDisplay("12 Hrs", "No", "N.A");
+    updateDisplay("12 Hrs", "No", "N.A", false);
     esp_sleep_enable_timer_wakeup(30 * 1000000ULL);
     initial_delay_done = true;
     esp_deep_sleep_start();
     intermittent_sampling(3, 27, duty_cycle);
 
   } else if (IRCode == TWO) { // Start 24 hour delay, then cont. sampling 
-    updateDisplay("24 Hrs", "No", "N.A");
+    updateDisplay("24 Hrs", "No", "N.A", false);
     esp_sleep_enable_timer_wakeup(24*60*60 * 1000000ULL);
     initial_delay_done = true;
     esp_deep_sleep_start();
     intermittent_sampling(3, 27, duty_cycle);
 
   } else if (IRCode == THREE) { // Start 48hr delay, then cont. sampling 
-    updateDisplay("48 hrs", "No", "N.A");
+    updateDisplay("48 hrs", "No", "N.A", false);
     esp_sleep_enable_timer_wakeup(48*60*60 * 1000000ULL);
     initial_delay_done = true;
     esp_deep_sleep_start();
